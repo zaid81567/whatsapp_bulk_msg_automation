@@ -1,3 +1,4 @@
 # ignore all text files
 *.txt
 /2.py
+/test
