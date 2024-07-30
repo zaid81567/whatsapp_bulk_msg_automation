@@ -33,33 +33,37 @@ driver.get(link)
 time.sleep(login_t)
 print("Logged In")
 
-# sending message using driver
-print("sending message")
-link2 = f'https://web.whatsapp.com/send/?phone={country_code}{numbers[0]}'
-driver.get(link2)
-time.sleep(new_msg_t)
 
-# attach image
-attach_btn = driver.find_element(By.CSS_SELECTOR, '.xqmb7z')
-attach_btn.click()  
-time.sleep(2)
+    # sending message using driver
+for num in numbers:
+    print(num)
+    print("sending message")
+    link2 = f'https://web.whatsapp.com/send/?phone={country_code}{num}'
+    driver.get(link2)
+    time.sleep(15)
 
-# Get the input element for attaching the image
-attach_input = driver.find_element(By.XPATH, '//*[@id="main"]/footer/div[1]/div/span[2]/div/div[1]/div[2]/div/span/div/ul/div/div[2]/li/div/input')
-attach_input.send_keys(img_path)
-time.sleep(2)  # Wait for the image to be attached
-print('img insertion done')
+    # attach image
+    attach_btn = driver.find_element(By.CSS_SELECTOR, '.xqmb7z')
+    attach_btn.click()  
+    time.sleep(2)
 
-# Find the message input field and inject the message
-msg_input = driver.find_element(By.XPATH, '//*[@id="app"]/div/div[2]/div[2]/div[2]/span/div/div/div/div[2]/div/div[1]/div[3]/div/div/div[2]/div[1]/div[1]/p')
-pc.copy(msg)
-msg_input.send_keys(Keys.CONTROL, "v")
-time.sleep(1)
-# driver.execute_script("arguments[0].innerHTML = arguments[1];", msg_input, msg)
-msg_input.send_keys(Keys.ENTER)
-print("msg insertion done")
+    # Get the input element for attaching the image
+    attach_input = driver.find_element(By.XPATH, '//*[@id="main"]/footer/div[1]/div/span[2]/div/div[1]/div[2]/div/span/div/ul/div/div[2]/li/div/input')
+    attach_input.send_keys(img_path)
+    time.sleep(2)  # Wait for the image to be attached
+    print('img insertion done')
 
-# Wait to observe the action
+    # Find the message input field and inject the message
+    msg_input = driver.find_element(By.XPATH, '//*[@id="app"]/div/div[2]/div[2]/div[2]/span/div/div/div/div[2]/div/div[1]/div[3]/div/div/div[2]/div[1]/div[1]/p')
+    pc.copy(msg)
+    msg_input.send_keys(Keys.CONTROL, "v")
+    time.sleep(1)
+    # driver.execute_script("arguments[0].innerHTML = arguments[1];", msg_input, msg)
+    msg_input.send_keys(Keys.ENTER)
+    print("msg insertion done")
+
+    # Wait to observe the action   
+    time.sleep(2)
 time.sleep(20)
 
 # close the driver
