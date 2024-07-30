@@ -1,3 +1,2 @@
 # ignore all text files
-/numbers.txt
-/req.txt
+*.txt
