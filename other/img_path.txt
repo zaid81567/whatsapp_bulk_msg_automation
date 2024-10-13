@@ -1,0 +1,2 @@
+** remove everything after reading: add image path
+** example: C:\Users\User\Desktop\image.jpeg

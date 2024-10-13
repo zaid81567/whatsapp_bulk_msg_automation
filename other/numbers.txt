@@ -1,0 +1,10 @@
+** Each phone number should be on a new line.
+** format example: erase everything before adding numbers!!!
+
+9188888888
+9188888888
+9188888888
+9188888888
+9188888888
+9188888888
+9188888888

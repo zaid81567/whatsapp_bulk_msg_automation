@@ -3,83 +3,120 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import pyperclip as pc
 import time
 
-# config
-login_t = 30
-new_msg_t = 10
-msg_send_t = 5
-country_code = 91
-# img_path = r"D:\Downloads\efh_20240727042202_563164_131bf_5e686.png"
 
-# create driver
+# Helper function to log skipped numbers (those not registered on WhatsApp)
+def saveSkippedNumber(num):
+    with open("other/skipped_nums.txt", "a") as file:
+        file.write(str(num) + '\n')
+
+# Configuration variables
+login_t = 30  # Time to allow for manual login (adjust if needed)
+country_code = 91  # Enter your country code
+
+# Initialize variable for counting skipped numbers
+count_skipped_num = 0
+
+# Function for explicit waits, useful for waiting until an element is present on the page
+def wait_for_element(driver, locator, timeout=10):
+    return WebDriverWait(driver, timeout).until(EC.presence_of_element_located(locator))
+
+# Create Selenium Chrome driver instance (ChromeDriver is managed automatically)
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
-# getting image path
-with open("img_path.txt") as file:
+# Load the image path from the file
+with open("other/img_path.txt") as file:
     img_path = file.readline().rstrip()
 
-# getting message
+# Load the message from the file (supports UTF-8 encoding for non-ASCII characters)
 msg = ''
-with open("message.txt", encoding="utf-8") as file:
+with open("other/message.txt", encoding="utf-8") as file:
     for line in file.readlines():
         msg += line
 
-# get all numbers
+# Load phone numbers from the file
 numbers = []
-with open("numbers.txt") as file:
+with open("other/numbers.txt") as file:
     for num in file.readlines():
         numbers.append(num.rstrip())
-print(numbers)
 
-# open browser with default link
+# Open WhatsApp Web and wait for manual login
 link = 'https://web.whatsapp.com'
 driver.get(link)
-time.sleep(login_t)
+time.sleep(login_t)  # Time for manual login
 print("Logged In")
 
-
-s_time = time.time()
-for i, num in zip(range(len(numbers)), numbers):
-    # copying number in clipboard
+# Start processing each number
+s_time = time.time()  # Start timer for execution time logging
+for i, num in enumerate(numbers, 1):
+    # Copy the phone number to the clipboard
     pc.copy(num)
 
-    # showing num info on terminal
-    print(f"===={i+1}. {num}====")
+    # Print current number being processed to the console
+    print(f"===={i}. {num}====")
 
-    # opening new chat
-    new_chat_el = driver.find_element(By.XPATH, '//*[@id="app"]/div/div[2]/div[3]/header/div[2]/div/span/div[4]/div/span')
-    new_chat_el.click()
-    # time.sleep(1)
-    new_chat_input_el = driver.find_element(By.XPATH, '//*[@id="app"]/div/div[2]/div[2]/div[1]/span/div/span/div/div[1]/div[2]/div[2]/div/div[1]/p')
+    # Open a new chat with the contact
+    try:
+        new_chat_el = wait_for_element(driver, (By.XPATH, '//*[@id="app"]/div/div[2]/div[3]/header/header/div/span/div/span/div[1]/div/span'))
+        new_chat_el.click()
+    except:
+        print("TimeOut: New Chat button missing.")
+        break  # Exit if the New Chat button is missing
+
+    # Paste the number and attempt to start the chat
+    new_chat_input_el = wait_for_element(driver, (By.XPATH, '//*[@id="app"]/div/div[2]/div[2]/div[1]/span/div/span/div/div[1]/div[2]/div[2]/div/div[1]/p'))
     new_chat_input_el.send_keys(Keys.CONTROL, "v")
+    time.sleep(1)
     new_chat_input_el.send_keys(Keys.ENTER)
 
-    # attach image
-    attach_btn = driver.find_element(By.CSS_SELECTOR, '.xqmb7z')
-    attach_btn.click()
-    time.sleep(1)
-        # Get the input element for attaching the image
-    attach_input = driver.find_element(By.XPATH, '//*[@id="main"]/footer/div[1]/div/span[2]/div/div[1]/div[2]/div/span/div/ul/div/div[2]/li/div/input')
-    attach_input.send_keys(img_path)
-    print('-> img attachment done')
-    time.sleep(1)  
+    # Check if the number is not a registered WhatsApp contact
+    try:
+        back_btn = driver.find_element(By.XPATH, '//*[@id="app"]/div/div[2]/div[2]/div[1]/span/div/span/div/header/div/div[1]/div/span')
+        back_btn.click()
+        print("Clicked back")
+        saveSkippedNumber(num)  # Log skipped number
+        count_skipped_num += 1
+        print("::: Message skipped :::")
+        time.sleep(1)
+        continue  # Skip to the next number if not found
+    except:
+        pass  # If the number exists, proceed to message sending
 
-    # add text message
-    msg_input = driver.find_element(By.XPATH, '//*[@id="app"]/div/div[2]/div[2]/div[2]/span/div/div/div/div[2]/div/div[1]/div[3]/div/div/div[2]/div[1]/div[1]/p')
+    # Short wait to allow chat to load
+    time.sleep(1)
+
+    # Attach the image
+    attach_btn = wait_for_element(driver, (By.CSS_SELECTOR, '.xqmb7z'))
+    attach_btn.click()
+
+    attach_input = wait_for_element(driver, (By.XPATH, '//*[@id="main"]/footer/div[1]/div/span[2]/div/div[1]/div[2]/div/span/div/ul/div/div[2]/li/div/input'))
+    attach_input.send_keys(img_path)
+    print('-> Image attachment done')
+    time.sleep(2)  # Allow time for the image to be uploaded
+
+    # Paste the text message
+    msg_input = wait_for_element(driver, (By.XPATH, '//*[@id="app"]/div/div[2]/div[2]/div[2]/span/div/div/div/div[2]/div/div[1]/div[3]/div/div/div[2]/div[1]/div[1]/p'))
     pc.copy(msg)
     msg_input.send_keys(Keys.CONTROL, "v")
-    print("-> msg attachment done")
-    msg_input.send_keys(Keys.ENTER)
+    print("-> Message attached")
+    msg_input.send_keys(Keys.ENTER)  # Send the message
 
-    print(":::    message sent    :::")
+    print("::: Message sent :::")
 
+    # Short wait to ensure the message is sent before moving to the next number
+    time.sleep(1)
+
+# End of processing, log the total execution time
 e_time = time.time()
-print("::: ::: Execution Time: ",round((e_time - s_time), 2 ), " s.")
-# sleep time before terminating the program
-time.sleep(20)
+print("::: ::: Execution Time:", round((e_time - s_time), 2), "s.")
 
-# close the driver
-print("====PROGRAM SUCCESSFULLY INTERPRATED====")
+# Short delay before closing the browser
+time.sleep(5)
+
+# Close the browser and end the program
+print("==== PROGRAM SUCCESSFULLY EXECUTED ====")
 driver.quit()
